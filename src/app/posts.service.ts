@@ -1,6 +1,11 @@
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, tap } from 'rxjs/operators';
 import { Post } from './post.model';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import {
+  HttpClient,
+  HttpEventType,
+  HttpHeaders,
+  HttpParams,
+} from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Subject, throwError } from 'rxjs';
 
@@ -20,7 +25,10 @@ export class PostsService {
     this.http
       .post<{ name: string }>(
         'https://angular-testing-d0332-default-rtdb.firebaseio.com/post.json',
-        postData
+        postData,
+        {
+          observe: 'response',
+        }
       )
       .subscribe(
         (responseData) => {
@@ -44,6 +52,7 @@ export class PostsService {
             'Custom-Header': 'Hello',
           }),
           params: searchParams,
+          responseType: 'json',
         }
       )
       .pipe(
@@ -63,8 +72,21 @@ export class PostsService {
       );
   }
   deletePosts() {
-    return this.http.delete(
-      'https://angular-testing-d0332-default-rtdb.firebaseio.com/post.json'
-    );
+    return this.http
+      .delete(
+        'https://angular-testing-d0332-default-rtdb.firebaseio.com/post.json',
+        {
+          observe: 'events',
+          responseType: 'text',
+        }
+      )
+      .pipe(
+        tap((event) => {
+          console.log('event: ', event);
+          if (event.type === HttpEventType.Response) {
+            console.log(event.body);
+          }
+        })
+      );
   }
 }
